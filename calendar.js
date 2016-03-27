@@ -2,7 +2,7 @@
 var clientId = '78512710474-gmldkv4v754u7phqgk5cj5c7a5pqrq5v.apps.googleusercontent.com';
 var apiKey = 'AIzaSyChbqdw1gU-hpEvqKLORMf79jSZ15DM-bM';
 var scopes = 'https://www.googleapis.com/auth/calendar';
-var calendarId = 'azorko13@gmail.com';
+var calendarId;
 
 // This function will be called once the Google APIs JavaScript client library loads.
 function handleClientLoad() {
@@ -18,22 +18,38 @@ function checkAuth() {
 
 // Handle success, or failure of the authorization.
 function handleAuthResult(authResult) {
-	var authorizeButton = document.getElementById('authorize-button');
+  var $authBtn, $errorMsg;
+  var $authForm = $('.authorize-form');
 
-  // Successful authorization: hide the authorize-button and make the api call.
+  // Successful authorization: hide the authorize-form and make the api call.
 	if (authResult && !authResult.error) {
-		authorizeButton.style.visibility = 'hidden';
+    $authForm.hide();
 		makeApiCall(calendarId);
-  // Failed authorization: show the authorize-button and set the button's click handler.
+  // Failed authorization: show the authorize-form and set the form button's click handler.
 	} else {
-		authorizeButton.style.visibility = '';
-		authorizeButton.onclick = handleAuthClick;
+    $authBtn = $('#authorize-button');
+    $errorMsg = $('.calendar-id-error');
+    $errorMsg.hide();
+		$authForm.show();
+		$authBtn.on('click', handleAddCalendar);
 	}
 }
 
-// Click handler for authorize-button. This will open a pop-up for the user to authorize the use of personal data.
+// Click handler for #authorize-button. Validates the gmail address input and calls
+// authorize function, or displays error.
+function handleAddCalendar(event) {
+  var $errorMsg = $('.calendar-id-error');
+  calendarId = $('#calendar-id').val();
+  if (/^[a-z0-9](\.?[a-z0-9]){5,}@g(oogle)?mail\.com$/.test(calendarId)) {
+    handleAuthClick();
+  } else {
+    $errorMsg.show();
+  }
+}
+
+// This will open a pop-up for the user to authorize the use of personal data.
 // This will create the initial auth token and pass it to the callback handleAuthResult.
-function handleAuthClick(event) {
+function handleAuthClick() {
 	gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: false}, handleAuthResult);
 	return false;
 }
@@ -50,7 +66,7 @@ function makeApiCall(calendarId) {
 
 			// Receive and use the API response.
 			request.then(function(resp) {
-        var eventsList = [], successArgs, successRes;
+        var eventsList = []; //successArgs, successRes;
 
 				if (resp.result.error) {
 					reportError('Google Calendar API: ' + data.error.message, data.error.errors);
@@ -68,13 +84,6 @@ function makeApiCall(calendarId) {
 							description: entry.description
 						});
 					});
-
-					// call the success handler(s) and allow it to return a new events array
-					successArgs = [eventsList].concat(Array.prototype.slice.call(arguments, 1)); // Attach other jQuery success args.
-					successRes = $.fullCalendar.applyAll(true, this, successArgs);
-					if ($.isArray(successRes)) {
-						return successRes;
-					}
 				}
 
 				if(eventsList.length > 0) {
@@ -89,7 +98,7 @@ function makeApiCall(calendarId) {
 }
 
 function generateFullCalendar(eventsList){
-  $('#calendar').fullCalendar({
+  $('#full-calendar').fullCalendar({
     googleCalendarApiKey: apiKey,
     events: eventsList
   });

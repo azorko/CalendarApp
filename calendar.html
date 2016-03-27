@@ -3,6 +3,7 @@
   <head>
 	  <title>Calendar</title>
     <link rel='stylesheet' href='fullcalendar/fullcalendar.min.css' />
+    <link rel='stylesheet' href='calendar.css' />
     <script src='fullcalendar/lib/jquery.min.js'></script>
     <script src='fullcalendar/lib/moment.min.js'></script>
     <script src='fullcalendar/fullcalendar.min.js'></script>
@@ -12,7 +13,14 @@
   </head>
   <body>
     <!-- FullCalendar gets attached to this element. -->
-    <div id='calendar'></div>
-    <button id='authorize-button'>Authorize Anastasia Zorko's Google calendar</button>
+    <div id='full-calendar'></div>
+    <div class='authorize-form'>
+      <h4>Sync your primary gmail calendar with CalendarApp.</h4>
+      <label for='calendar-id'>Gmail:</label>
+      <input type='email' id='calendar-id'/>
+      <span class='calendar-id-error'>Please verify email address.</span>
+    <br/>
+      <button id='authorize-button'>Authorize</button>
+    </div>
   </body>
 </html>
