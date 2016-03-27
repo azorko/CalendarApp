@@ -6,14 +6,14 @@ var calendarId;
 
 // This function will be called once the Google APIs JavaScript client library loads.
 function handleClientLoad() {
-	gapi.client.setApiKey(apiKey);
-	window.setTimeout(checkAuth,1);
+ gapi.client.setApiKey(apiKey);
+ window.setTimeout(checkAuth,1);
 }
 
 // Check if user already authorized and refresh the auth token without generating an auth pop-up.
 // Callback handleAuthResult is called with the returned auth token.
 function checkAuth() {
-	gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: true}, handleAuthResult);
+ gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: true}, handleAuthResult);
 }
 
 // Handle success, or failure of the authorization.
@@ -22,17 +22,17 @@ function handleAuthResult(authResult) {
   var $authForm = $('.authorize-form');
 
   // Successful authorization: hide the authorize-form and make the api call.
-	if (authResult && !authResult.error) {
+ if (authResult && !authResult.error) {
     $authForm.hide();
-		makeApiCall(calendarId);
+  makeApiCall(calendarId);
   // Failed authorization: show the authorize-form and set the form button's click handler.
-	} else {
+ } else {
     $authBtn = $('#authorize-button');
     $errorMsg = $('.calendar-id-error');
     $errorMsg.hide();
-		$authForm.show();
-		$authBtn.on('click', handleAddCalendar);
-	}
+  $authForm.show();
+  $authBtn.on('click', handleAddCalendar);
+ }
 }
 
 // Click handler for #authorize-button. Validates the gmail address input and calls
@@ -50,51 +50,51 @@ function handleAddCalendar(event) {
 // This will open a pop-up for the user to authorize the use of personal data.
 // This will create the initial auth token and pass it to the callback handleAuthResult.
 function handleAuthClick() {
-	gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: false}, handleAuthResult);
-	return false;
+ gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: false}, handleAuthResult);
+ return false;
 }
 
 // Make a call to the Google Calendar API and display the results via FullCalendar.
 function makeApiCall(calendarId) {
 
-	// Load the Google Calendar API.
-	gapi.client.load('calendar', 'v3').then(function() {
-	  // Create the request for the private calendar id.
-		  var request = gapi.client.calendar.events.list({
-				'calendarId': calendarId
-			});
+ // Load the Google Calendar API.
+ gapi.client.load('calendar', 'v3').then(function() {
+   // Create the request for the private calendar id.
+    var request = gapi.client.calendar.events.list({
+    'calendarId': calendarId
+   });
 
-			// Receive and use the API response.
-			request.then(function(resp) {
+   // Receive and use the API response.
+   request.then(function(resp) {
         var eventsList = []; //successArgs, successRes;
 
-				if (resp.result.error) {
-					reportError('Google Calendar API: ' + data.error.message, data.error.errors);
-				}
-				else if (resp.result.items) {
-					$.each(resp.result.items, function(i, entry) {
+    if (resp.result.error) {
+     reportError('Google Calendar API: ' + data.error.message, data.error.errors);
+    }
+    else if (resp.result.items) {
+     $.each(resp.result.items, function(i, entry) {
 
-						eventsList.push({
-							id: entry.id,
-							title: entry.summary,
-							start: entry.start.dateTime || entry.start.date, // Save the date/time start, with a fallback to date only.
-							end: entry.end.dateTime || entry.end.date,
-							url: entry.htmlLink,
-							location: entry.location,
-							description: entry.description
-						});
-					});
-				}
+      eventsList.push({
+       id: entry.id,
+       title: entry.summary,
+       start: entry.start.dateTime || entry.start.date, // Save the date/time start, with a fallback to date only.
+       end: entry.end.dateTime || entry.end.date,
+       url: entry.htmlLink,
+       location: entry.location,
+       description: entry.description
+      });
+     });
+    }
 
-				if(eventsList.length > 0) {
+    if(eventsList.length > 0) {
           generateFullCalendar(eventsList)
         }
         return eventsList;
 
-		  }, function(reason) {
-			console.log('Error: ' + reason.result.error.message);
-		  });
-	});
+    }, function(reason) {
+   console.log('Error: ' + reason.result.error.message);
+    });
+ });
 }
 
 function generateFullCalendar(eventsList){
