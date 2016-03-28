@@ -70,7 +70,7 @@ function handleClientLoad() {
       url: 'https://accounts.google.com/o/oauth2/revoke?token='
         + root.gapi.auth.getToken().access_token,
       method: 'GET',
-      dataType: 'jsonp',
+      dataType: 'jsonp'
     });
     request.done(function() {
       this.$fullCalendar.fullCalendar('removeEvents');
