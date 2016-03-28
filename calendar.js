@@ -23,10 +23,12 @@ function handleClientLoad() {
     this.$errorMsg = $('.error-msg');
     this.$authForm = $('.authorize-form');
     this.$calendarId = $('#calendar-id');
+    this.$loading = $('.loading');
 
     this.initialize();
   };
 
+  // Initialize GoogleCalendar.
   GoogleCalendar.prototype.initialize = function() {
     $(document).ready(function() {
       this.generateFullCalendar();
@@ -34,12 +36,15 @@ function handleClientLoad() {
     }.bind(this));
   };
 
-  GoogleCalendar.prototype.generateFullCalendar = function() {
+  // One time initialization of FullCalendar element.
+  GoogleCalendar.prototype.generateFullCalendar = function(eventsList) {
     this.$fullCalendar.fullCalendar({
       googleCalendarApiKey: this.apiKey,
+      events: eventsList
     });
   };
 
+  // Initiate GoogleCalendar events.
   GoogleCalendar.prototype.initiateEvents = function() {
     this.$authBtn.on('click', handleAddCalendar.bind(this));
     this.$logoutBtn.on('click', handleLogout.bind(this));
@@ -58,9 +63,12 @@ function handleClientLoad() {
     }
   }
 
+  // Remove current Google calendar form FullCalendar. Revoke the Google APIs
+  // auth token via the request, and clean any existing structures of user data.
   function handleLogout(evt) {
     var request = $.ajax({
-      url: 'https://accounts.google.com/o/oauth2/revoke?token=' + root.gapi.auth.getToken().access_token,
+      url: 'https://accounts.google.com/o/oauth2/revoke?token='
+        + root.gapi.auth.getToken().access_token,
       method: 'GET',
       dataType: 'jsonp',
       crossDomain: true
@@ -70,6 +78,7 @@ function handleClientLoad() {
       this.elementDisplay('logout');
       root.localStorage.removeItem('calendarId');
       this.calendarId = '';
+      this.eventsList = [];
     }.bind(this));
     request.fail(function() {
       this.$errorMsg.text('There was a logout error, please try again.');
@@ -77,6 +86,25 @@ function handleClientLoad() {
     }.bind(this));
   }
 
+
+  // Render the calendar events that match the chosen month.
+  function handleMonthChange(evt) {
+    var monthEnd = Date.parse(this.$fullCalendar.fullCalendar('getView').end._d);
+    var monthStart = Date.parse(this.$fullCalendar.fullCalendar('getView').start._d);
+    var entryStart;
+
+    this.$loading.show();
+    this.$fullCalendar.fullCalendar('removeEvents');
+    for (var i = 0; i < this.eventsList.length; i++) {
+      entryStart = this.eventsList[i].startMs;
+      if (entryStart <= monthEnd && entryStart >= monthStart) {
+        this.$fullCalendar.fullCalendar('renderEvent', this.eventsList[i]);
+      }
+    }
+    this.$loading.hide();
+  }
+
+  // Toggle the display of the authorization-form and logout-button depending on sessionStatus.
   GoogleCalendar.prototype.elementDisplay = function(sessionStatus) {
     if (sessionStatus === 'login') {
       this.$authForm.hide();
@@ -87,40 +115,52 @@ function handleClientLoad() {
     }
   };
 
+  // Will be called by external handleClientLoad function upon Google APIs
+  // JavaScript library load.
   GoogleCalendar.prototype.handleClientLoad = function() {
     root.gapi.client.setApiKey(this.apiKey);
     root.setTimeout(checkAuth.bind(this), 1);
   };
 
-  // Check if user already authorized and refresh the auth token without generating an auth pop-up.
-  // Callback handleAuthResult is called with the returned auth token.
+  // Check if user already authorized and refresh the auth token without generating
+  // an auth pop-up. Callback handleAuthResult is called with the returned auth token.
   function checkAuth() {
-    root.gapi.auth.authorize({client_id: this.clientId, scope: this.scopes, immediate: true}, handleAuthResult.bind(this));
+    root.gapi.auth.authorize({
+      client_id: this.clientId,
+      scope: this.scopes,
+      immediate: true
+    }, handleAuthResult.bind(this));
   }
+
+  // This will open a pop-up for the user to authorize the use of personal data.
+  // This will create the initial auth token and pass it to the callback handleAuthResult.
+  GoogleCalendar.prototype.handleAuthClick = function() {
+    root.gapi.auth.authorize({
+      client_id: this.clientId,
+      scope: this.scopes,
+      immediate: false
+    }, handleAuthResult.bind(this));
+  };
 
   // Handle success, or failure of the authorization.
   function handleAuthResult(authResult) {
-    // Successful authorization: hide the authorize-form and make the api call.
     if (authResult && !authResult.error) {
+      // Successful authorization: make the api call.
       this.elementDisplay('login');
+      this.$errorMsg.hide();
+      this.$loading.show();
       this.makeApiCall(this.calendarId);
-    // Failed authorization: show the authorize-form and set the form button's click handler.
     } else {
-      // If tried authorizing with new user input and failed show authorization error.
+      // Failed authorization.
+      this.$loading.hide();
       if (root.localStorage.getItem('calendarId')) {
+        // If tried authorizing with new user input and failed show authorization error.
         this.$errorMsg.text('There was an issue with authorization, please try again.');
         this.$errorMsg.show();
       }
       this.elementDisplay('logout');
     }
   }
-
-  // This will open a pop-up for the user to authorize the use of personal data.
-  // This will create the initial auth token and pass it to the callback handleAuthResult.
-  GoogleCalendar.prototype.handleAuthClick = function() {
-    root.gapi.auth.authorize({client_id: this.clientId, scope: this.scopes, immediate: false}, handleAuthResult.bind(this));
-    return false;
-  };
 
   // Make a call to the Google Calendar API and display the results via FullCalendar.
   GoogleCalendar.prototype.makeApiCall = function() {
@@ -136,27 +176,35 @@ function handleClientLoad() {
       request.then(function(resp) {
         var eventsList = [];
 
-        if (resp.result.error) {
-          reportError('Google Calendar API: ' + data.error.message, data.error.errors);
-        }
-        else if (resp.result.items) {
+        if (resp.result.items) {
           $.each(resp.result.items, function(i, entry) {
             eventsList.push({
               title: entry.summary,
-              start: entry.start.dateTime || entry.start.date, // Save the date/time start, with a fallback to date only.
+              // Save the date/time start, with a fallback to date only.
+              start: entry.start.dateTime || entry.start.date,
+              // Start in milliseconds.
+              startMs: Date.parse(entry.start.dateTime),
               url: entry.htmlLink,
             });
           });
         }
 
-        for (var i = 0; i < eventsList.length; i++) {
-          this.$fullCalendar.fullCalendar('renderEvent', eventsList[i]);
-        }
-        return eventsList;
+        // Add click handlers for FullCalendar next, prev, and today buttons.
+        $('.fc-next-button, .fc-prev-button, .fc-today-button').on(
+          'click', handleMonthChange.bind(this)
+         );
+        this.eventsList = eventsList;
+        (handleMonthChange.bind(this))();
 
       }.bind(this), function(reason) {
+        this.$loading.hide();
+        this.$errorMsg.text('This email was not authorized. Please login to the\
+          account corresponding to the email.');
+        this.$errorMsg.show();
+        (handleLogout.bind(this))();
         console.log('Error: ' + reason.result.error.message);
-      });
+      }.bind(this));
+
     }.bind(this));
   };
 

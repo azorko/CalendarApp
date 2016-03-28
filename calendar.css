@@ -1,4 +1,15 @@
 .error-msg {
   color: red;
+}
+.loading {
+  background: rgba(255, 255, 255, 0.7);
+  left: 0;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 999;
+}
+.authorize-form, .logout-button, .error-msg {
   display: none;
 }
