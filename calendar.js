@@ -63,7 +63,7 @@ function handleClientLoad() {
     }
   }
 
-  // Remove current Google calendar form FullCalendar. Revoke the Google APIs
+  // Remove current Google calendar from FullCalendar. Revoke the Google APIs
   // auth token via the request, and clean any existing structures of user data.
   function handleLogout(evt) {
     var request = $.ajax({
@@ -71,7 +71,6 @@ function handleClientLoad() {
         + root.gapi.auth.getToken().access_token,
       method: 'GET',
       dataType: 'jsonp',
-      crossDomain: true
     });
     request.done(function() {
       this.$fullCalendar.fullCalendar('removeEvents');
