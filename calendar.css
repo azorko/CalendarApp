@@ -10,6 +10,9 @@
   width: 100%;
   z-index: 999;
 }
+.logout-button {
+  margin-top: 15px;
+}
 .authorize-form, .logout-button, .error-msg {
   display: none;
 }
