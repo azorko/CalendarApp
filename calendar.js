@@ -1,7 +1,7 @@
 // This function will be called once the Google APIs JavaScript client library loads.
 function handleClientLoad() {
-  var clientId = '78512710474-gmldkv4v754u7phqgk5cj5c7a5pqrq5v.apps.googleusercontent.com';
-  var apiKey = 'AIzaSyChbqdw1gU-hpEvqKLORMf79jSZ15DM-bM';
+  var clientId = '564701462246-7a5ml23i12hegu87oit8dgagtrsrejrf.apps.googleusercontent.com';
+  var apiKey = 'AIzaSyBGOG5C14GFn5AEYqlBMba97tsQVFgTBdo';
   var gCalApiVersion = 'v3';
   var newCal = new FullCalendar.GoogleCalendar(clientId, apiKey, gCalApiVersion);
   newCal.handleClientLoad();
